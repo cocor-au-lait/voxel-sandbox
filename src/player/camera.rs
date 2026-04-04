@@ -3,14 +3,13 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
-use super::Player;
+use super::{Player, PlayerOnGround, PlayerVelocity};
 
 #[derive(Component)]
 pub struct PlayerCamera {
     pub pitch: f32,
     pub yaw: f32,
     pub sensitivity: f32,
-    pub speed: f32,
 }
 
 impl Default for PlayerCamera {
@@ -19,22 +18,30 @@ impl Default for PlayerCamera {
             pitch: 0.0,
             yaw: 0.0,
             sensitivity: 0.002,
-            speed: 20.0,
         }
     }
 }
 
 pub fn spawn_player(mut commands: Commands) {
-    commands.spawn((
-        Player,
-        PlayerCamera::default(),
-        Camera3d::default(),
-        Transform::from_xyz(16.0, 80.0, 16.0).looking_at(Vec3::new(48.0, 80.0, 16.0), Vec3::Y),
-    ));
+    // プレイヤー本体 (足元位置)
+    commands
+        .spawn((
+            Player,
+            PlayerVelocity::default(),
+            PlayerOnGround::default(),
+            Transform::from_xyz(16.0, 68.0, 16.0),
+        ))
+        .with_children(|parent| {
+            // カメラ (目の高さ: 1.65m)
+            parent.spawn((
+                PlayerCamera::default(),
+                Camera3d::default(),
+                Transform::from_xyz(0.0, 1.65, 0.0),
+            ));
+        });
 }
 
-pub fn fly_camera(
-    time: Res<Time>,
+pub fn handle_mouse_look(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut mouse_motion: MessageReader<MouseMotion>,
     mut cursor_q: Query<&mut CursorOptions, With<PrimaryWindow>>,
@@ -44,7 +51,6 @@ pub fn fly_camera(
         return;
     };
 
-    // ESC でカーソルトグル
     if keyboard.just_pressed(KeyCode::Escape) {
         match cursor.grab_mode {
             CursorGrabMode::None => {
@@ -62,7 +68,6 @@ pub fn fly_camera(
         return;
     };
 
-    // マウス回転 (カーソルロック時のみ)
     if cursor.grab_mode == CursorGrabMode::Locked {
         for event in mouse_motion.read() {
             cam.yaw -= event.delta.x * cam.sensitivity;
@@ -74,38 +79,4 @@ pub fn fly_camera(
     }
 
     tf.rotation = Quat::from_euler(EulerRot::YXZ, cam.yaw, cam.pitch, 0.0);
-
-    // キーボード移動
-    let forward = tf.forward();
-    let right = tf.right();
-    let mut velocity = Vec3::ZERO;
-
-    if keyboard.pressed(KeyCode::KeyW) {
-        velocity += *forward;
-    }
-    if keyboard.pressed(KeyCode::KeyS) {
-        velocity -= *forward;
-    }
-    if keyboard.pressed(KeyCode::KeyA) {
-        velocity -= *right;
-    }
-    if keyboard.pressed(KeyCode::KeyD) {
-        velocity += *right;
-    }
-    if keyboard.pressed(KeyCode::Space) {
-        velocity += Vec3::Y;
-    }
-    if keyboard.pressed(KeyCode::ShiftLeft) {
-        velocity -= Vec3::Y;
-    }
-
-    let speed = if keyboard.pressed(KeyCode::ControlLeft) {
-        cam.speed * 3.0
-    } else {
-        cam.speed
-    };
-
-    if velocity.length_squared() > 0.0 {
-        tf.translation += velocity.normalize() * speed * time.delta_secs();
-    }
 }

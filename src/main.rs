@@ -21,7 +21,7 @@ fn main() {
                         // 独自 HTML でデプロイする場合は Some("#bevy-canvas".into()) に変更
                         canvas: None,
                         fit_canvas_to_parent: true,
-                        prevent_default_event_handling: false,
+                        prevent_default_event_handling: true,
                         ..default()
                     }),
                     ..default()
