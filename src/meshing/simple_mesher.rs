@@ -74,7 +74,6 @@ const FACES: [(IVec3, [[f32; 3]; 4], [f32; 3]); 6] = [
     ),
 ];
 
-/// ブロック座標に対応するブロックを取得 (チャンクをまたぐ場合は隣接チャンクを参照)
 fn get_block_at(
     chunk: &ChunkData,
     chunk_store: &ChunkDataStore,
@@ -113,7 +112,69 @@ fn get_block_at(
     }
 }
 
-/// シンプルな可視面カリングメッシュを生成
+/// terrain.png (256x256, 16x16 タイル) のタイル位置を返す (col, row)
+fn block_tile(block: BlockType, dir: IVec3) -> (u32, u32) {
+    match block {
+        BlockType::Grass => {
+            if dir == IVec3::Y {
+                (0, 0) // 草の上面 (グレースケール→緑で着色)
+            } else if dir == IVec3::NEG_Y {
+                (2, 0) // 下面は土
+            } else {
+                (3, 0) // 側面: 草+土
+            }
+        }
+        BlockType::Stone => (1, 0),
+        BlockType::Dirt => (2, 0),
+        BlockType::Sand => (2, 1),
+        BlockType::Cobblestone => (0, 1),
+        BlockType::Bedrock => (1, 1),
+        BlockType::Wood => {
+            if dir.y != 0 { (5, 1) } else { (4, 1) }
+        }
+        BlockType::Planks => (4, 0),
+        BlockType::Glass => (1, 3),
+        BlockType::Leaves => (4, 3), // グレースケール→緑で着色
+        BlockType::Air => (0, 0),
+    }
+}
+
+/// タイル (col, row) の UV 座標を返す [v0, v1, v2, v3]
+/// v0=左下, v1=左上, v2=右上, v3=右下
+fn tile_uv(col: u32, row: u32) -> [[f32; 2]; 4] {
+    const S: f32 = 1.0 / 16.0;
+    const EPS: f32 = 0.5 / 256.0; // テクスチャ滲み防止
+    let u0 = col as f32 * S + EPS;
+    let u1 = (col + 1) as f32 * S - EPS;
+    let v0 = row as f32 * S + EPS;
+    let v1 = (row + 1) as f32 * S - EPS;
+    [[u0, v1], [u0, v0], [u1, v0], [u1, v1]]
+}
+
+/// 面の頂点カラー: 方向による明度 + バイオーム着色
+fn face_color(block: BlockType, dir: IVec3) -> [f32; 4] {
+    let brightness = if dir == IVec3::Y {
+        1.0_f32
+    } else if dir == IVec3::NEG_Y {
+        0.5
+    } else if dir.x != 0 {
+        0.7
+    } else {
+        0.85
+    };
+
+    match (block, dir) {
+        // 草の上面: 緑に着色
+        (BlockType::Grass, d) if d == IVec3::Y => [0.55, 0.9, 0.3, 1.0],
+        // 草の側面: 上部の草部分を少しだけ緑に
+        (BlockType::Grass, d) if d.y == 0 => [brightness * 0.85, brightness, brightness * 0.7, 1.0],
+        // 葉: 緑に着色 (グレースケールテクスチャを緑に)
+        (BlockType::Leaves, _) => [0.4 * brightness, 0.8 * brightness, 0.2 * brightness, 1.0],
+        // それ以外: 面方向の明度のみ
+        _ => [brightness, brightness, brightness, 1.0],
+    }
+}
+
 pub fn build_chunk_mesh(
     chunk: &ChunkData,
     chunk_store: &ChunkDataStore,
@@ -133,7 +194,6 @@ pub fn build_chunk_mesh(
                     continue;
                 }
 
-                let block_color = block.base_color();
                 let local = IVec3::new(lx as i32, ly as i32, lz as i32);
                 let offset = Vec3::new(lx as f32, ly as f32, lz as f32);
 
@@ -145,16 +205,20 @@ pub fn build_chunk_mesh(
                         continue;
                     }
 
+                    let (col, row) = block_tile(block, *dir);
+                    let face_uvs = tile_uv(col, row);
+                    let color = face_color(block, *dir);
+
                     let base_idx = positions.len() as u32;
-                    for vert in face_verts {
+                    for (i, vert) in face_verts.iter().enumerate() {
                         positions.push([
                             offset.x + vert[0],
                             offset.y + vert[1],
                             offset.z + vert[2],
                         ]);
                         normals.push(*normal);
-                        uvs.push([0.0, 0.0]);
-                        colors.push(block_color);
+                        uvs.push(face_uvs[i]);
+                        colors.push(color);
                     }
                     indices.extend_from_slice(&[
                         base_idx,

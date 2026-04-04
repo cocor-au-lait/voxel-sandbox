@@ -12,6 +12,10 @@ const MAX_REACH: f32 = 6.0;
 #[derive(Component)]
 pub struct HighlightBlock;
 
+/// カーソルが未ロック時に表示するオーバーレイ
+#[derive(Component)]
+pub struct ClickToPlayOverlay;
+
 /// ゲーム開始時: ハイライトボックスとクロスヘアを生成
 pub fn setup_hud(
     mut commands: Commands,
@@ -33,37 +37,42 @@ pub fn setup_hud(
         Visibility::Hidden,
     ));
 
-    // クロスヘア (縦棒)
-    commands.spawn((
-        Node {
-            position_type: PositionType::Absolute,
-            left: Val::Percent(50.0),
-            top: Val::Percent(50.0),
-            width: Val::Px(2.0),
-            height: Val::Px(12.0),
-            margin: UiRect::new(Val::Px(-1.0), Val::ZERO, Val::Px(-6.0), Val::ZERO),
-            ..default()
-        },
-        BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.85)),
-    ));
-    // クロスヘア (横棒)
-    commands.spawn((
-        Node {
-            position_type: PositionType::Absolute,
-            left: Val::Percent(50.0),
-            top: Val::Percent(50.0),
-            width: Val::Px(12.0),
-            height: Val::Px(2.0),
-            margin: UiRect::new(Val::Px(-6.0), Val::ZERO, Val::Px(-1.0), Val::ZERO),
-            ..default()
-        },
-        BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.85)),
-    ));
+    // TODO: クロスヘア未実装
+    // Node ベースの白+黒アウトライン方式を試みたが Bevy 0.18 + WebGL2 で正常表示されないため
+    // カスタムシェーダーまたは画像テクスチャを使った実装に変更する必要がある
+
+    // クリックで開始オーバーレイ (カーソル未ロック時に表示)
+    commands
+        .spawn((
+            ClickToPlayOverlay,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                position_type: PositionType::Absolute,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.5)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("Click to play\n[ESC] to release cursor"),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    ..default()
+                },
+            ));
+        });
 }
 
 /// DDA レイキャスト: カーソルロック中のみ実行
 pub fn cast_ray(
-    camera_q: Query<&GlobalTransform, With<PlayerCamera>>,
+    camera_q: Query<&Transform, With<PlayerCamera>>,
     cursor_q: Query<&CursorOptions, With<PrimaryWindow>>,
     store: Res<ChunkDataStore>,
     mut target: ResMut<TargetBlock>,
@@ -83,7 +92,7 @@ pub fn cast_ray(
         return;
     };
 
-    let origin = cam_tf.translation();
+    let origin = cam_tf.translation;
     let dir = cam_tf.forward().as_vec3();
 
     match dda(origin, dir, MAX_REACH, &store) {
@@ -286,6 +295,24 @@ fn set_block(
 }
 
 /// ハイライトボックスをターゲットブロック位置に移動
+/// カーソルロック状態に応じてオーバーレイを表示/非表示
+pub fn update_overlay(
+    cursor_q: Query<&CursorOptions, With<PrimaryWindow>>,
+    mut overlay_q: Query<&mut Visibility, With<ClickToPlayOverlay>>,
+) {
+    let Ok(cursor) = cursor_q.single() else {
+        return;
+    };
+    let Ok(mut vis) = overlay_q.single_mut() else {
+        return;
+    };
+    *vis = if cursor.grab_mode == CursorGrabMode::None {
+        Visibility::Visible
+    } else {
+        Visibility::Hidden
+    };
+}
+
 pub fn update_highlight(
     target: Res<TargetBlock>,
     mut q: Query<(&mut Transform, &mut Visibility), With<HighlightBlock>>,

@@ -104,7 +104,7 @@ pub fn sync_chunk_entities(
     mut chunk_map: ResMut<ChunkMap>,
     chunk_store: Res<ChunkDataStore>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    chunk_material: Res<crate::rendering::ChunkMaterial>,
     chunk_entity_q: Query<Entity, With<ChunkEntity>>,
 ) {
     // 破棄: chunk_store に存在しなくなったEntityを削除
@@ -133,11 +133,7 @@ pub fn sync_chunk_entities(
                     bevy::mesh::PrimitiveTopology::TriangleList,
                     bevy::asset::RenderAssetUsages::RENDER_WORLD,
                 ))),
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: Color::WHITE,
-                    perceptual_roughness: 0.9,
-                    ..default()
-                })),
+                MeshMaterial3d(chunk_material.0.clone()),
                 Transform::from_translation(chunk_pos),
             ))
             .id();

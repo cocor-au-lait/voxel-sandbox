@@ -5,10 +5,26 @@ pub mod collision;
 pub mod interaction;
 pub mod movement;
 
-pub use camera::PlayerCamera;
-
 #[derive(Component)]
 pub struct Player;
+
+/// FPS カメラの回転角度と感度
+#[derive(Component)]
+pub struct PlayerCamera {
+    pub pitch: f32,
+    pub yaw: f32,
+    pub sensitivity: f32,
+}
+
+impl Default for PlayerCamera {
+    fn default() -> Self {
+        Self {
+            pitch: 0.0,
+            yaw: 0.0,
+            sensitivity: 0.002,
+        }
+    }
+}
 
 /// プレイヤーの速度ベクトル
 #[derive(Component, Default)]
@@ -48,9 +64,11 @@ impl Plugin for PlayerPlugin {
                     camera::handle_mouse_look,
                     movement::apply_movement,
                     collision::apply_velocity_with_collision,
+                    camera::sync_camera_to_player,
                     interaction::cast_ray,
                     interaction::handle_block_input,
                     interaction::update_highlight,
+                    interaction::update_overlay,
                 )
                     .chain(),
             );
