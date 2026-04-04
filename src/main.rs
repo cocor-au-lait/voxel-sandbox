@@ -46,7 +46,6 @@ fn main() {
 fn hide_loading_screen() {
     #[cfg(target_arch = "wasm32")]
     {
-        use bevy::platform::collections::HashMap;
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         if let Some(el) = document.get_element_by_id("loading") {
