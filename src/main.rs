@@ -38,8 +38,21 @@ fn main() {
             inventory::InventoryPlugin,
             persistence::PersistencePlugin,
         ))
-        .add_systems(Startup, setup_world)
+        .add_systems(Startup, (setup_world, hide_loading_screen))
         .run();
+}
+
+/// WASM: trunk が生成するローディング画面を非表示にする
+fn hide_loading_screen() {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use bevy::platform::collections::HashMap;
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        if let Some(el) = document.get_element_by_id("loading") {
+            let _ = el.set_attribute("style", "display:none");
+        }
+    }
 }
 
 fn setup_world(mut commands: Commands) {

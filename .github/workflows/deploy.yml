@@ -35,34 +35,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli --version 0.2.117 --locked
+      - name: Install trunk
+        uses: jetli/trunk-action@v0.5.0
+        with:
+          version: latest
 
-      - name: Install wasm-opt
-        run: |
-          sudo apt-get install -y binaryen
-
-      - name: Build (release)
-        run: cargo build --release --target wasm32-unknown-unknown
-
-      - name: Generate JS bindings
-        run: |
-          wasm-bindgen \
-            --out-dir dist \
-            --target web \
-            --no-typescript \
-            target/wasm32-unknown-unknown/release/voxel-sandbox.wasm
-
-      - name: Optimize WASM
-        run: |
-          wasm-opt -Os \
-            -o dist/voxel_sandbox_bg.wasm \
-            dist/voxel_sandbox_bg.wasm
-
-      - name: Copy assets and HTML
-        run: |
-          cp web/index.html dist/index.html
-          if [ -d assets ]; then cp -r assets dist/; fi
+      - name: Build
+        run: trunk build --release
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
