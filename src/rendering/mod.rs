@@ -7,6 +7,10 @@ use bevy::prelude::*;
 #[derive(Resource)]
 pub struct ChunkMaterial(pub Handle<StandardMaterial>);
 
+/// UI (ホットバー) で使うテレインテクスチャハンドル
+#[derive(Resource)]
+pub struct TerrainTexture(pub Handle<Image>);
+
 pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
@@ -17,7 +21,7 @@ impl Plugin for RenderingPlugin {
 
 static TERRAIN_PNG: &[u8] = include_bytes!("../../assets/textures/terrain.png");
 
-fn setup_chunk_material(
+pub(crate) fn setup_chunk_material(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -34,12 +38,13 @@ fn setup_chunk_material(
 
     let texture = images.add(image);
     let material = materials.add(StandardMaterial {
-        base_color_texture: Some(texture),
+        base_color_texture: Some(texture.clone()),
         base_color: Color::WHITE,
         unlit: true,
         alpha_mode: AlphaMode::Mask(0.1),
         ..default()
     });
     commands.insert_resource(ChunkMaterial(material));
+    commands.insert_resource(TerrainTexture(texture));
 }
 

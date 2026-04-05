@@ -17,10 +17,15 @@ pub fn spawn_player(mut commands: Commands) {
 
     // カメラは独立エンティティ (GlobalTransform の遅延を避けるため親子関係を使わない)
     // tonemapping_luts feature なしでは TonyMcMapface が使えないため None に設定
+    // Minecraft 標準 FOV 70°
     commands.spawn((
         PlayerCamera::default(),
         Camera3d::default(),
         Tonemapping::None,
+        Projection::Perspective(PerspectiveProjection {
+            fov: 70.0_f32.to_radians(),
+            ..default()
+        }),
         Transform::from_xyz(16.0, 69.65, 16.0),
     ));
 }

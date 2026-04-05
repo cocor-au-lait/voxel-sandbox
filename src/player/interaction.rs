@@ -16,6 +16,7 @@ pub struct HighlightBlock;
 #[derive(Component)]
 pub struct ClickToPlayOverlay;
 
+
 /// ゲーム開始時: ハイライトボックスとクロスヘアを生成
 pub fn setup_hud(
     mut commands: Commands,
@@ -37,9 +38,52 @@ pub fn setup_hud(
         Visibility::Hidden,
     ));
 
-    // TODO: クロスヘア未実装
-    // Node ベースの白+黒アウトライン方式を試みたが Bevy 0.18 + WebGL2 で正常表示されないため
-    // カスタムシェーダーまたは画像テクスチャを使った実装に変更する必要がある
+    // クロスヘア: 全画面中央コンテナ → 中心点 0x0 → 水平・垂直バーを絶対配置
+    commands
+        .spawn(Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            position_type: PositionType::Absolute,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        })
+        .with_children(|center| {
+            center
+                .spawn(Node {
+                    width: Val::Px(0.0),
+                    height: Val::Px(0.0),
+                    ..default()
+                })
+                .with_children(|cross| {
+                    // 水平バー
+                    cross.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            width: Val::Px(16.0),
+                            height: Val::Px(2.0),
+                            left: Val::Px(-8.0),
+                            top: Val::Px(-1.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::WHITE),
+                    ));
+                    // 垂直バー
+                    cross.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            width: Val::Px(2.0),
+                            height: Val::Px(16.0),
+                            left: Val::Px(-1.0),
+                            top: Val::Px(-8.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::WHITE),
+                    ));
+                });
+        });
+
+    // TODO: 操作説明オーバーレイ未実装 (テキスト ContentSize 伝搬の問題で一時削除)
 
     // クリックで開始オーバーレイ (カーソル未ロック時に表示)
     commands

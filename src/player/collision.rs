@@ -39,7 +39,7 @@ pub fn apply_velocity_with_collision(
     let Ok((mut tf, mut vel, mut on_ground)) = q.single_mut() else {
         return;
     };
-    let dt = time.delta_secs();
+    let dt = time.delta_secs().min(0.05);
     let mut pos = tf.translation;
     on_ground.0 = false;
 

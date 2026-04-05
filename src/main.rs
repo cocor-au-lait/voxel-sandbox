@@ -12,6 +12,7 @@ mod utils;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::srgb(0.47, 0.66, 1.0)))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

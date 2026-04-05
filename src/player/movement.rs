@@ -19,7 +19,7 @@ pub fn apply_movement(
         return;
     };
 
-    let dt = time.delta_secs();
+    let dt = time.delta_secs().min(0.05);
 
     // 水平移動 (カメラの yaw から XZ 平面方向を計算)
     let forward = Vec3::new(-cam.yaw.sin(), 0.0, -cam.yaw.cos());
