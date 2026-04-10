@@ -88,16 +88,32 @@ src/
 - **Tonemapping::None** — `TonyMcMapface` は `tonemapping_luts` feature（zstd 依存）が必要で WASM 非対応のため無効化
 - **dt クランプ（0.05秒）** — バックグラウンドタブから復帰時に大きな dt で物理演算が暴走するのを防止
 
+## ローカル確認
+
+### 事前準備（初回のみ）
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install trunk
+```
+
+### ブラウザで確認（trunk serve）
+
+```bash
+trunk serve
+```
+
+`http://localhost:8080` でブラウザ確認できます。ファイル変更を監視して自動リビルドします。
+
+### ネイティブで確認
+
+```bash
+cargo run
+```
+
 ## ビルド
 
 ```bash
-# ネイティブ（開発用）
-cargo run
-
-# WASM（開発サーバー localhost:1334）
-cargo build --target wasm32-unknown-unknown
-wasm-server-runner target/wasm32-unknown-unknown/debug/voxel-sandbox.wasm
-
 # WASM リリースビルド（GitHub Actions で自動デプロイ）
-cargo build --target wasm32-unknown-unknown --release
+trunk build --release
 ```
