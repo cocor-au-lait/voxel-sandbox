@@ -25,10 +25,7 @@ fn block_at(world_pos: IVec3, store: &ChunkDataStore) -> BlockType {
 }
 
 fn is_solid(world_pos: IVec3, store: &ChunkDataStore) -> bool {
-    !matches!(
-        block_at(world_pos, store),
-        BlockType::Air | BlockType::Leaves | BlockType::Glass
-    )
+    block_at(world_pos, store).is_solid()
 }
 
 pub fn apply_velocity_with_collision(
