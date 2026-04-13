@@ -90,26 +90,28 @@ src/
 
 ## ローカル確認
 
-### 事前準備（初回のみ）
-
-```bash
-rustup target add wasm32-unknown-unknown
-cargo install trunk
-```
-
-### ブラウザで確認（trunk serve）
-
-```bash
-trunk serve
-```
-
-`http://localhost:8080` でブラウザ確認できます。ファイル変更を監視して自動リビルドします。
+ネイティブ（デスクトップ）とブラウザ（WASM）の両方で動作確認できます。
 
 ### ネイティブで確認
 
 ```bash
 cargo run
 ```
+
+### ブラウザで確認
+
+事前準備（初回のみ）:
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install trunk
+```
+
+```bash
+trunk serve
+```
+
+`http://localhost:8080` でブラウザ確認できます。ファイル変更を監視して自動リビルドします。
 
 ## ビルド
 

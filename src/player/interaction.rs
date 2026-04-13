@@ -315,25 +315,25 @@ fn set_block(
     );
     if let Some(chunk_data) = store.0.get_mut(&chunk) {
         chunk_data.set(local.x as usize, local.y as usize, local.z as usize, block);
-        queue.0.push_front(chunk);
+        queue.reprioritize(chunk);
         // 境界ブロックなら隣接チャンクも再メッシュ
         if local.x == 0 {
-            queue.0.push_front(chunk - IVec3::X);
+            queue.reprioritize(chunk - IVec3::X);
         }
         if local.x == CHUNK_SIZE_I - 1 {
-            queue.0.push_front(chunk + IVec3::X);
+            queue.reprioritize(chunk + IVec3::X);
         }
         if local.y == 0 {
-            queue.0.push_front(chunk - IVec3::Y);
+            queue.reprioritize(chunk - IVec3::Y);
         }
         if local.y == CHUNK_SIZE_I - 1 {
-            queue.0.push_front(chunk + IVec3::Y);
+            queue.reprioritize(chunk + IVec3::Y);
         }
         if local.z == 0 {
-            queue.0.push_front(chunk - IVec3::Z);
+            queue.reprioritize(chunk - IVec3::Z);
         }
         if local.z == CHUNK_SIZE_I - 1 {
-            queue.0.push_front(chunk + IVec3::Z);
+            queue.reprioritize(chunk + IVec3::Z);
         }
     }
 }

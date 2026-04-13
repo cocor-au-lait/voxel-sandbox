@@ -94,50 +94,35 @@ pub fn generate_queued_chunks(
         let chunk_coord = ChunkCoord(coord);
         let chunk_data = terrain_gen.generate_chunk(&chunk_coord);
         chunk_store.0.insert(coord, chunk_data);
-        meshing_queue.0.push_back(coord);
+        meshing_queue.push_back(coord);
+
+        // 隣接チャンクが既にロード済みであれば境界面を更新するために再メッシュする
+        for dir in [IVec3::X, IVec3::NEG_X, IVec3::Y, IVec3::NEG_Y, IVec3::Z, IVec3::NEG_Z] {
+            let neighbor = coord + dir;
+            if chunk_store.0.contains_key(&neighbor) {
+                meshing_queue.push_back(neighbor);
+            }
+        }
+
         count += 1;
     }
 }
 
-/// 毎フレーム: チャンクEntityのスポーン/デスポーン
+/// 毎フレーム: アンロードされたチャンクのEntityを削除
+///
+/// スポーンは process_meshing_queue が正しいメッシュと同時に行う。
+/// これにより空メッシュが一瞬表示される問題を防ぐ。
 pub fn sync_chunk_entities(
     mut commands: Commands,
     mut chunk_map: ResMut<ChunkMap>,
     chunk_store: Res<ChunkDataStore>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    chunk_material: Res<crate::rendering::ChunkMaterial>,
-    chunk_entity_q: Query<Entity, With<ChunkEntity>>,
 ) {
-    // 破棄: chunk_store に存在しなくなったEntityを削除
-    let existing_coords: std::collections::HashSet<IVec3> =
-        chunk_map.0.keys().copied().collect();
-    for coord in existing_coords {
-        if !chunk_store.0.contains_key(&coord) {
-            if let Some(entity) = chunk_map.0.remove(&coord) {
-                commands.entity(entity).despawn();
-            }
+    chunk_map.0.retain(|&coord, &mut entity| {
+        if chunk_store.0.contains_key(&coord) {
+            true
+        } else {
+            commands.entity(entity).despawn();
+            false
         }
-    }
-
-    // スポーン: chunk_store にあって Entity がまだないチャンク
-    for (&coord, _) in chunk_store.0.iter() {
-        if chunk_map.0.contains_key(&coord) {
-            continue;
-        }
-
-        let chunk_pos = ChunkCoord(coord).world_origin();
-        let entity = commands
-            .spawn((
-                ChunkEntity,
-                ChunkCoord(coord),
-                Mesh3d(meshes.add(Mesh::new(
-                    bevy::mesh::PrimitiveTopology::TriangleList,
-                    bevy::asset::RenderAssetUsages::RENDER_WORLD,
-                ))),
-                MeshMaterial3d(chunk_material.0.clone()),
-                Transform::from_translation(chunk_pos),
-            ))
-            .id();
-        chunk_map.0.insert(coord, entity);
-    }
+    });
 }

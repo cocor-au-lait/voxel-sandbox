@@ -107,7 +107,9 @@ fn get_block_at(
                 neighbor_local.z as usize,
             )
         } else {
-            BlockType::Stone
+            // 隣接チャンクが未ロードの場合は Air とみなして面を描画する
+            // (Stone とみなすとチャンク境界の面が不当に非表示になる)
+            BlockType::Air
         }
     }
 }
