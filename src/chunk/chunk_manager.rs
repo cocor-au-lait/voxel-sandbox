@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 use crate::chunk::{ChunkCoord, ChunkDataStore, ChunkEntity, ChunkMap};
 use crate::meshing::MeshingQueue;
 use crate::player::Player;
-use crate::terrain::generate_flat_chunk;
+use crate::terrain::TerrainGenerator;
 
 /// 描画距離 (水平, チャンク単位)
 pub const RENDER_DISTANCE: i32 = 6;
@@ -79,6 +79,7 @@ pub fn generate_queued_chunks(
     mut gen_queue: ResMut<GenerationQueue>,
     mut chunk_store: ResMut<ChunkDataStore>,
     mut meshing_queue: ResMut<MeshingQueue>,
+    terrain_gen: Res<TerrainGenerator>,
 ) {
     const GENERATE_BUDGET: usize = 4;
     let mut count = 0;
@@ -91,7 +92,7 @@ pub fn generate_queued_chunks(
             continue;
         }
         let chunk_coord = ChunkCoord(coord);
-        let chunk_data = generate_flat_chunk(&chunk_coord);
+        let chunk_data = terrain_gen.generate_chunk(&chunk_coord);
         chunk_store.0.insert(coord, chunk_data);
         meshing_queue.0.push_back(coord);
         count += 1;

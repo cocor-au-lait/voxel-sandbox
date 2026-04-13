@@ -12,7 +12,7 @@ pub fn spawn_player(mut commands: Commands) {
         Player,
         PlayerVelocity::default(),
         PlayerOnGround::default(),
-        Transform::from_xyz(16.0, 68.0, 16.0),
+        Transform::from_xyz(16.0, 150.0, 16.0),
     ));
 
     // カメラは独立エンティティ (GlobalTransform の遅延を避けるため親子関係を使わない)
@@ -26,7 +26,7 @@ pub fn spawn_player(mut commands: Commands) {
             fov: 70.0_f32.to_radians(),
             ..default()
         }),
-        Transform::from_xyz(16.0, 69.65, 16.0),
+        Transform::from_xyz(16.0, 151.65, 16.0),
     ));
 }
 
