@@ -222,7 +222,7 @@ fn dda(
 
 fn is_targetable(world_pos: IVec3, store: &ChunkDataStore) -> bool {
     let block = get_block(world_pos, store);
-    !matches!(block, BlockType::Air | BlockType::Leaves | BlockType::Glass)
+    !block.is_air()
 }
 
 fn get_block(world_pos: IVec3, store: &ChunkDataStore) -> BlockType {
