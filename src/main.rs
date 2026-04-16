@@ -5,6 +5,7 @@ mod chunk;
 mod inventory;
 mod meshing;
 mod persistence;
+mod physics;
 mod player;
 mod rendering;
 mod terrain;
@@ -38,6 +39,7 @@ fn main() {
             player::PlayerPlugin,
             inventory::InventoryPlugin,
             persistence::PersistencePlugin,
+            physics::PhysicsPlugin,
         ))
         .add_systems(Startup, (setup_world, hide_loading_screen))
         .run();

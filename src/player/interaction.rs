@@ -5,6 +5,7 @@ use bevy::{
 use crate::block::BlockType;
 use crate::chunk::{ChunkDataStore, CHUNK_SIZE_I};
 use crate::meshing::MeshingQueue;
+use crate::physics::FallingSandQueue;
 use super::{Player, PlayerCamera, SelectedBlock, TargetBlock};
 
 const MAX_REACH: f32 = 6.0;
@@ -252,6 +253,7 @@ pub fn handle_block_input(
     player_q: Query<&Transform, With<Player>>,
     mut store: ResMut<ChunkDataStore>,
     mut queue: ResMut<MeshingQueue>,
+    mut sand_queue: ResMut<FallingSandQueue>,
 ) {
     let Ok(cursor) = cursor_q.single() else {
         return;
@@ -266,6 +268,8 @@ pub fn handle_block_input(
 
     if mouse.just_pressed(MouseButton::Left) {
         set_block(pos, BlockType::Air, &mut store, &mut queue);
+        // 破壊したブロックの上にある砂が落下するかチェック
+        sand_queue.0.insert(pos + IVec3::Y);
     }
 
     if mouse.just_pressed(MouseButton::Right) {
@@ -280,6 +284,10 @@ pub fn handle_block_input(
         };
         if !overlaps_player(place_pos, player_tf.translation) {
             set_block(place_pos, selected.0, &mut store, &mut queue);
+            // 砂ブロックを設置した場合、落下するかチェック
+            if selected.0 == BlockType::Sand {
+                sand_queue.0.insert(place_pos);
+            }
         }
     }
 }
